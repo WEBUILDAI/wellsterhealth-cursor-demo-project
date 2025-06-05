@@ -26,23 +26,27 @@ Before you begin, ensure you have the following installed on your system:
 
 ```bash
 git clone <your-repository-url>
-cd ruby-on-rails-demo
+cd wellsterhealth-cursor-demo-project
 ```
 
-### Step 2: Install Ruby (macOS with Homebrew)
+### Step 2: Install Ruby (macOS with rbenv - Recommended)
 
 ```bash
-# Install Ruby via Homebrew
-brew install ruby
+# Install rbenv and ruby-build via Homebrew
+brew install rbenv ruby-build
 
-# Add Ruby to your PATH
-echo 'export PATH="/opt/homebrew/opt/ruby/bin:$PATH"' >> ~/.zshrc
-echo 'export PATH="/opt/homebrew/lib/ruby/gems/3.4.0/bin:$PATH"' >> ~/.zshrc
+# Add rbenv to your shell configuration
+echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.zshrc
+echo 'eval "$(rbenv init -)"' >> ~/.zshrc
 source ~/.zshrc
+
+# Install Ruby 3.4.4 (latest stable version)
+rbenv install 3.4.4
+rbenv global 3.4.4
 
 # Verify Ruby installation
 ruby --version
-# Should show: ruby 3.4.4 or similar
+# Should show: ruby 3.4.4 (2025-05-14 revision a38531fd3f) +PRISM [arm64-darwin24]
 ```
 
 ### Step 3: Install Ruby (Linux/Ubuntu)
@@ -67,31 +71,38 @@ ruby --version
 ### Step 5: Install Rails
 
 ```bash
-# Install Rails 7.1
+# Update RubyGems to latest version
+gem update --system
+
+# Install Rails 7.1 (current stable version)
 gem install rails -v "~> 7.1.0"
 
 # Verify Rails installation
 rails --version
-# Should show: Rails 7.1.x.x
+# Should show: Rails 7.1.5.1 or similar
 ```
 
 ### Step 6: Install Project Dependencies
 
 ```bash
 # Navigate to project directory
-cd ruby-on-rails-demo
+cd wellsterhealth-cursor-demo-project
 
 # Install all required gems
 bundle install
 ```
 
-### Step 7: Start the Application
+### Step 7: Setup Database & Start Application
 
 ```bash
-# Start the Rails server
-rails server
+# Run database migrations (if any)
+bin/rails db:migrate
 
-# Alternative command
+# Start the Rails server
+bin/rails server
+
+# Alternative commands
+rails server
 rails s
 ```
 
@@ -108,19 +119,28 @@ The application will be available at: **http://localhost:3000**
 ## 📁 Project Structure
 
 ```
-ruby-on-rails-demo/
+wellsterhealth-cursor-demo-project/
 ├── app/
 │   ├── controllers/          # Application controllers
+│   │   ├── concerns/               # Controller concerns
 │   │   ├── auth_controller.rb      # Authentication logic
 │   │   └── todos_controller.rb     # Todo CRUD operations
 │   ├── views/               # HTML templates
 │   │   ├── auth/                   # Login page
-│   │   └── todos/                  # Todo list page
-│   └── assets/              # CSS, JS, images
+│   │   ├── todos/                  # Todo list page
+│   │   └── layouts/               # Application layouts
+│   ├── models/              # Data models
+│   ├── assets/              # CSS, JS, images
+│   └── helpers/             # View helpers
 ├── config/
 │   ├── routes.rb            # URL routing configuration
-│   └── database.yml         # Database configuration
+│   ├── database.yml         # Database configuration
+│   └── environments/        # Environment-specific settings
+├── db/                      # Database files and migrations
+├── bin/                     # Executable scripts
 ├── Gemfile                  # Ruby dependencies
+├── Gemfile.lock            # Locked gem versions
+├── .gitignore              # Git ignore patterns
 └── README.md               # This file
 ```
 
@@ -133,13 +153,17 @@ If you get Ruby version errors:
 ```bash
 # Check your Ruby version
 ruby --version
+# Should show: ruby 3.4.4, not 2.6.x (system Ruby)
 
-# Make sure you're using the correct PATH
+# Make sure you're using rbenv Ruby
 which ruby
 which rails
+# Should show paths with .rbenv in them
 
-# On macOS, ensure Homebrew Ruby is first in PATH:
-export PATH="/opt/homebrew/opt/ruby/bin:/opt/homebrew/lib/ruby/gems/3.4.0/bin:$PATH"
+# If still using system Ruby, reload your shell:
+source ~/.zshrc
+rbenv global 3.4.4
+rbenv rehash
 ```
 
 ### Permission Errors (macOS/Linux)
@@ -148,10 +172,13 @@ export PATH="/opt/homebrew/opt/ruby/bin:/opt/homebrew/lib/ruby/gems/3.4.0/bin:$P
 # If you get permission errors with gem install:
 gem install rails --user-install
 
-# Or use a Ruby version manager (recommended):
-brew install rbenv
-rbenv install 3.1.0
-rbenv global 3.1.0
+# With rbenv (already configured if you followed the setup):
+rbenv rehash
+which ruby
+which rails
+
+# Make sure you're using rbenv Ruby, not system Ruby:
+ruby --version  # Should show 3.4.4, not 2.6.x
 ```
 
 ### Port Already in Use
