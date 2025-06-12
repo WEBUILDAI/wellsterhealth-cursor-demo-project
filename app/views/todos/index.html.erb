@@ -23,10 +23,23 @@
     </div>
   </div>
   
-  <!-- Add new todo form -->
+  <!-- Add/Edit todo form -->
   <div class="add-todo-section">
-    <h3>Add New Todo</h3>
-    <%= form_with model: Todo.new, url: todos_path, method: :post, local: true, class: "add-todo-form" do |form| %>
+    <% if @editing_todo %>
+      <div class="editing-notice">
+        <h3>Edit Todo</h3>
+        <p>You are currently editing: <strong><%= @editing_todo.title %></strong></p>
+        <%= link_to "Cancel Edit", todos_path, class: "btn btn-secondary btn-sm" %>
+      </div>
+    <% else %>
+      <h3>Add New Todo</h3>
+    <% end %>
+    
+    <% form_todo = @editing_todo || @todo %>
+    <% form_url = @editing_todo ? update_todo_path(@editing_todo) : todos_path %>
+    <% form_method = @editing_todo ? :patch : :post %>
+    
+    <%= form_with model: form_todo, url: form_url, method: form_method, local: true, class: "add-todo-form" do |form| %>
       <div class="form-row">
         <div class="form-group">
           <%= form.label :title, "Title*", class: "form-label" %>
@@ -51,7 +64,7 @@
             ['Low', 'low'],
             ['Medium', 'medium'],
             ['High', 'high']
-          ], 'medium'), {}, { class: "form-select", required: true } %>
+          ], form_todo.priority), {}, { class: "form-select", required: true } %>
         </div>
         
         <div class="form-group">
@@ -60,7 +73,7 @@
             ['Open', 'open'],
             ['Doing', 'doing'],
             ['Done', 'done']
-          ], 'open'), {}, { class: "form-select", required: true } %>
+          ], form_todo.status), {}, { class: "form-select", required: true } %>
         </div>
       </div>
       
@@ -70,7 +83,7 @@
       </div>
       
       <div class="form-group">
-        <%= form.submit "Add Todo", class: "btn btn-primary" %>
+        <%= form.submit(@editing_todo ? "Update Todo" : "Add Todo", class: "btn btn-primary") %>
       </div>
     <% end %>
   </div>
@@ -79,7 +92,7 @@
   <div class="todos-list">
     <% if @todos.any? %>
       <% @todos.each do |todo| %>
-        <div class="todo-item">
+        <div class="todo-item <%= 'editing' if @editing_todo == todo %>">
           <div class="todo-content">
             <div class="todo-header">
               <h4 class="todo-title"><%= html_escape(todo.title) %></h4>
@@ -97,19 +110,20 @@
               <p class="todo-description"><%= html_escape(todo.description) %></p>
             <% end %>
             
-                         <div class="todo-details">
-               <div class="todo-detail">
-                 <strong>Assignee:</strong> <%= html_escape(todo.assignee) %>
-               </div>
-               <div class="todo-detail">
-                 <strong>Due Date:</strong> <%= todo.due_date.strftime("%B %d, %Y") %>
-               </div>
-               <div class="todo-detail">
-                 <strong>Created:</strong> <%= todo.created_at.strftime("%B %d, %Y at %I:%M %p") %>
-               </div>
-             </div>
+            <div class="todo-details">
+              <div class="todo-detail">
+                <strong>Assignee:</strong> <%= html_escape(todo.assignee) %>
+              </div>
+              <div class="todo-detail">
+                <strong>Due Date:</strong> <%= todo.due_date.strftime("%B %d, %Y") %>
+              </div>
+              <div class="todo-detail">
+                <strong>Created:</strong> <%= todo.created_at.strftime("%B %d, %Y at %I:%M %p") %>
+              </div>
+            </div>
           </div>
           <div class="todo-actions">
+            <%= link_to "Edit", edit_todo_path(todo), class: "btn btn-primary btn-sm" %>
             <%= form_with url: destroy_todo_path(todo.id), method: :delete, local: true, style: "display: inline;" do |form| %>
                 <%= form.submit "Delete", 
                     class: "btn btn-danger btn-sm",
@@ -218,6 +232,24 @@
     color: #333;
     font-size: 20px;
   }
+
+  .editing-notice {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  .editing-notice h3 {
+    margin: 0 0 10px 0;
+    color: #856404;
+  }
+
+  .editing-notice p {
+    margin: 0 0 15px 0;
+    color: #856404;
+  }
   
   .add-todo-form {
     display: flex;
@@ -324,6 +356,11 @@
     border-bottom: 1px solid #f0f0f0;
     transition: background-color 0.3s;
   }
+
+  .todo-item.editing {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+  }
   
   .todo-item:last-child {
     border-bottom: none;
@@ -331,6 +368,10 @@
   
   .todo-item:hover {
     background-color: #f8f9fa;
+  }
+
+  .todo-item.editing:hover {
+    background-color: #fff3cd;
   }
   
   .todo-content {
@@ -421,6 +462,8 @@
   .todo-actions {
     margin-left: 20px;
     align-self: flex-start;
+    display: flex;
+    gap: 10px;
   }
   
   .empty-state {

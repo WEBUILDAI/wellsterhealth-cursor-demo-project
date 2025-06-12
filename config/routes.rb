@@ -8,6 +8,8 @@ Rails.application.routes.draw do
   # Todo routes
   get "todos", to: "todos#index"
   post "todos", to: "todos#create"
+  get "todos/:id/edit", to: "todos#edit", as: :edit_todo
+  patch "todos/:id", to: "todos#update", as: :update_todo
   delete "todos/:id", to: "todos#destroy", as: :destroy_todo
   
   # Handle favicon requests

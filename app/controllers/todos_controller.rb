@@ -1,8 +1,11 @@
 class TodosController < ApplicationController
   before_action :require_authentication
+  before_action :set_todo, only: [:edit, :update, :destroy]
   
   def index
     @todos = Todo.all
+    @todo = Todo.new
+    @editing_todo = params[:edit_id] ? Todo.find(params[:edit_id]) : nil
     
     # Filter by status if specified
     if params[:status].present? && params[:status] != 'all'
@@ -19,12 +22,26 @@ class TodosController < ApplicationController
     if @todo.save
       redirect_to todos_path, notice: "Todo added successfully!"
     else
-      redirect_to todos_path, alert: "Error: #{@todo.errors.full_messages.join(', ')}"
+      @todos = Todo.all
+      @editing_todo = nil
+      render :index, alert: "Error: #{@todo.errors.full_messages.join(', ')}"
+    end
+  end
+
+  def edit
+    redirect_to todos_path(edit_id: @todo.id)
+  end
+
+  def update
+    if @todo.update(todo_params)
+      redirect_to todos_path, notice: "Todo updated successfully!"
+    else
+      redirect_to todos_path(edit_id: @todo.id), alert: "Error: #{@todo.errors.full_messages.join(', ')}"
     end
   end
 
   def destroy
-    Todo.find(params[:id]).destroy
+    @todo.destroy
     redirect_to todos_path, notice: "Todo deleted successfully!"
   end
   
@@ -34,6 +51,10 @@ class TodosController < ApplicationController
     unless session[:authenticated]
       redirect_to login_path, alert: "Please log in first!"
     end
+  end
+
+  def set_todo
+    @todo = Todo.find(params[:id])
   end
   
   def todo_params
