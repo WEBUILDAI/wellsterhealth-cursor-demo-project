@@ -22,6 +22,20 @@
       <%= link_to "Done", todos_path(status: 'done'), class: "filter-btn #{'active' if params[:status] == 'done'}" %>
     </div>
   </div>
+
+  <!-- Search section -->
+  <div class="search-section">
+    <h3>Filter by title or description:</h3>
+    <div class="search-input-container">
+      <input type="text" 
+             id="search-input" 
+             class="search-input" 
+             placeholder="Type to search todos..."
+             value="<%= params[:search] %>">
+      <div class="search-icon">🔍</div>
+    </div>
+    <div id="search-results-info" class="search-results-info"></div>
+  </div>
   
   <!-- Add/Edit todo form -->
   <div class="add-todo-section">
@@ -92,7 +106,9 @@
   <div class="todos-list">
     <% if @todos.any? %>
       <% @todos.each do |todo| %>
-        <div class="todo-item <%= 'editing' if @editing_todo == todo %>">
+        <div class="todo-item <%= 'editing' if @editing_todo == todo %>" 
+             data-title="<%= html_escape(todo.title.downcase) %>"
+             data-description="<%= html_escape(todo.description&.downcase || '') %>">
           <div class="todo-content">
             <div class="todo-header">
               <h4 class="todo-title"><%= html_escape(todo.title) %></h4>
@@ -133,17 +149,84 @@
         </div>
       <% end %>
     <% else %>
-      <div class="empty-state">
+      <div class="empty-state" id="empty-state">
         <h3>No todos yet!</h3>
         <p>Add your first todo item above to get started.</p>
+      </div>
+      <div class="no-results-state" id="no-results-state" style="display: none;">
+        <h3>No todos found</h3>
+        <p>Try adjusting your search or filters.</p>
       </div>
     <% end %>
   </div>
   
   <div class="footer">
-    <p>Total todos: <%= @todos.length %></p>
+    <p>Total todos: <span id="total-count"><%= @todos.length %></span></p>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('search-input');
+  const todoItems = document.querySelectorAll('.todo-item');
+  const emptyState = document.getElementById('empty-state');
+  const noResultsState = document.getElementById('no-results-state');
+  const totalCount = document.getElementById('total-count');
+  const searchResultsInfo = document.getElementById('search-results-info');
+  
+  function performSearch() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+    
+    todoItems.forEach(function(item) {
+      const title = item.getAttribute('data-title') || '';
+      const description = item.getAttribute('data-description') || '';
+      
+      const matches = title.includes(searchTerm) || description.includes(searchTerm);
+      
+      if (matches) {
+        item.style.display = 'flex';
+        visibleCount++;
+      } else {
+        item.style.display = 'none';
+      }
+    });
+    
+    // Update counts and states
+    totalCount.textContent = visibleCount;
+    
+    if (todoItems.length === 0) {
+      // No todos at all
+      if (emptyState) emptyState.style.display = 'block';
+      if (noResultsState) noResultsState.style.display = 'none';
+    } else if (visibleCount === 0 && searchTerm !== '') {
+      // Has todos but none match search
+      if (emptyState) emptyState.style.display = 'none';
+      if (noResultsState) noResultsState.style.display = 'block';
+    } else {
+      // Has visible todos
+      if (emptyState) emptyState.style.display = 'none';
+      if (noResultsState) noResultsState.style.display = 'none';
+    }
+    
+    // Update search results info
+    if (searchTerm !== '' && todoItems.length > 0) {
+      searchResultsInfo.textContent = `Showing ${visibleCount} of ${todoItems.length} todos`;
+      searchResultsInfo.style.display = 'block';
+    } else {
+      searchResultsInfo.style.display = 'none';
+    }
+  }
+  
+  // Add event listener for real-time search
+  searchInput.addEventListener('input', performSearch);
+  
+  // Perform initial search if there's a value (e.g., from URL parameter)
+  if (searchInput.value.trim() !== '') {
+    performSearch();
+  }
+});
+</script>
 
 <style>
   body {
@@ -178,7 +261,7 @@
     font-weight: 700;
   }
 
-  .filter-section {
+  .filter-section, .search-section {
     background: white;
     padding: 20px;
     border-radius: 12px;
@@ -186,7 +269,7 @@
     margin-bottom: 30px;
   }
 
-  .filter-section h3 {
+  .filter-section h3, .search-section h3 {
     margin: 0 0 15px 0;
     color: #333;
     font-size: 18px;
@@ -217,6 +300,43 @@
     border-color: #667eea;
     background: #667eea;
     color: white;
+  }
+
+  .search-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 12px 16px 12px 45px;
+    border: 2px solid #e1e1e1;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+    font-family: inherit;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 15px;
+    color: #666;
+    font-size: 16px;
+    pointer-events: none;
+  }
+
+  .search-results-info {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+    display: none;
   }
   
   .add-todo-section {
@@ -466,13 +586,13 @@
     gap: 10px;
   }
   
-  .empty-state {
+  .empty-state, .no-results-state {
     text-align: center;
     padding: 60px 20px;
     color: #666;
   }
   
-  .empty-state h3 {
+  .empty-state h3, .no-results-state h3 {
     margin-bottom: 10px;
     color: #999;
   }

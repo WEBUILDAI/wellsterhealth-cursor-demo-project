@@ -12,6 +12,15 @@ class TodosController < ApplicationController
       @todos = @todos.where(status: params[:status])
     end
     
+    # Filter by search query if specified
+    if params[:search].present?
+      search_term = "%#{params[:search].downcase}%"
+      @todos = @todos.where(
+        "LOWER(title) LIKE ? OR LOWER(description) LIKE ?", 
+        search_term, search_term
+      )
+    end
+    
     # Sort by due date and priority
     @todos = @todos.order(:due_date, :priority)
   end
